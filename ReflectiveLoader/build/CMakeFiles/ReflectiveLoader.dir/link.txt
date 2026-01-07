@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/ReflectiveLoader.dir/main.mm.o -o ReflectiveLoader  /Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/ReflectiveLoader/../Distribute//libloader.a -framework Foundation

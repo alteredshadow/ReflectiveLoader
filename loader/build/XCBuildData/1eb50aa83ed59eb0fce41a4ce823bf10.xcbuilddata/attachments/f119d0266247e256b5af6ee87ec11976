@@ -1,0 +1,6 @@
+/Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/loader/build/loader.build/Release/loader.build/Objects-normal/arm64/dyld_stubs.o
+/Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/loader/build/loader.build/Release/loader.build/Objects-normal/arm64/ImageLoader.o
+/Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/loader/build/loader.build/Release/loader.build/Objects-normal/arm64/ImageLoaderMachO.o
+/Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/loader/build/loader.build/Release/loader.build/Objects-normal/arm64/ImageLoaderMachOCompressed.o
+/Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/loader/build/loader.build/Release/loader.build/Objects-normal/arm64/ImageLoaderProxy.o
+/Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/loader/build/loader.build/Release/loader.build/Objects-normal/arm64/custom_dlfcn.o

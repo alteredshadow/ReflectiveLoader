@@ -1,0 +1,3 @@
+/Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/ReflectiveLoader/build/CMakeFiles/ReflectiveLoader.dir
+/Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/ReflectiveLoader/build/CMakeFiles/edit_cache.dir
+/Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/ReflectiveLoader/build/CMakeFiles/rebuild_cache.dir
