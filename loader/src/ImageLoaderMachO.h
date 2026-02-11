@@ -26,11 +26,12 @@
 #ifndef __IMAGELOADERMACHO__
 #define __IMAGELOADERMACHO__
 
-#include <stdint.h> 
-#include <mach-o/loader.h> 
+#include <stdint.h>
+#include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 #include <uuid/uuid.h>
 #include <mach-o/dyld_images.h>
+#include <pthread.h>
 
 #if __has_feature(ptrauth_calls)
 #include <ptrauth.h>
@@ -44,6 +45,22 @@
 #define BIND_TYPE_THREADED_REBASE 102
 
 namespace isolator {
+
+// TLV descriptor as laid out by the linker in __DATA,__thread_vars
+struct tlv_descriptor {
+    void* (*thunk)(struct tlv_descriptor*);
+    unsigned long key;
+    unsigned long offset;
+};
+
+// Per-image TLV metadata, used by custom_tlv_get_addr to lazily
+// allocate and initialize per-thread storage blocks.
+struct TLVImageInfo {
+    pthread_key_t key;
+    uint8_t*      initialData;       // heap copy of __thread_data content
+    size_t        initialDataSize;   // size of __thread_data
+    size_t        totalSize;         // __thread_data + __thread_bss
+};
 
 //
 // ImageLoaderMachO is a subclass of ImageLoader which loads mach-o format files.
@@ -245,6 +262,7 @@ protected:
 			void		doImageInit(const LinkContext& context);
 			void		fixupObjCSelectors(const LinkContext& context);
 			void		doModInitFunctions(const LinkContext& context);
+			void		initializeTLVs(const LinkContext& context);
 			void		setupLazyPointerHandler(const LinkContext& context);
 			void		lookupProgramVars(const LinkContext& context) const;
 
