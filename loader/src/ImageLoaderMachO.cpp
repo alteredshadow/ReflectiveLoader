@@ -117,17 +117,19 @@ static void tlv_thread_storage_destructor(void* storage) {
 
 // Replaces _tlv_bootstrap as the thunk in each TLV descriptor.
 static void* custom_tlv_get_addr(struct tlv_descriptor* d) {
-    void* storage = pthread_getspecific(d->key);
+    void* storage = pthread_getspecific((pthread_key_t)d->key);
     if (storage == NULL) {
-        TLVImageInfo* info = findTLVImageInfo(d->key);
+        TLVImageInfo* info = findTLVImageInfo((pthread_key_t)d->key);
         if (!info)
             dyld::throwf("TLV access for unknown pthread key %lu", d->key);
-        storage = calloc(1, info->totalSize);
+        size_t sz = info->totalSize;
+        if (sz == 0) sz = sizeof(void*);  // safety floor
+        storage = calloc(1, sz);
         if (!storage)
-            dyld::throwf("TLV storage allocation failed (%zu bytes)", info->totalSize);
+            dyld::throwf("TLV storage allocation failed (%zu bytes)", sz);
         if (info->initialDataSize > 0)
             memcpy(storage, info->initialData, info->initialDataSize);
-        pthread_setspecific(d->key, storage);
+        pthread_setspecific((pthread_key_t)d->key, storage);
     }
     return (void*)((uint8_t*)storage + d->offset);
 }
@@ -2532,10 +2534,10 @@ void ImageLoaderMachO::doGetDOFSections(const LinkContext& context, std::vector<
 
 void ImageLoaderMachO::initializeTLVs(const LinkContext& context)
 {
-    if (!(this->machHeader()->flags & MH_HAS_TLV_DESCRIPTORS))
-        return;
+    bool hasFlag = (this->machHeader()->flags & MH_HAS_TLV_DESCRIPTORS) != 0;
 
-    // Scan sections for TLV-related types
+    // Scan sections for TLV-related types regardless of flag —
+    // some toolchains (e.g. Go) may emit __thread_vars without setting MH_HAS_TLV_DESCRIPTORS.
     void*  tvAddr = NULL;  size_t tvSize = 0;   // __thread_vars (descriptors)
     void*  tdAddr = NULL;  size_t tdSize = 0;   // __thread_data (initial values)
     size_t tbSize = 0;                          // __thread_bss  (zero-fill)
@@ -2556,9 +2558,21 @@ void ImageLoaderMachO::initializeTLVs(const LinkContext& context)
         cmd = (const struct load_command*)(((char*)cmd)+cmd->cmdsize);
     }
 
-    if (!tvAddr || tvSize == 0) return;
+    if (!tvAddr || tvSize == 0) {
+        if (hasFlag)
+            dyld::log("dyld: TLV: MH_HAS_TLV_DESCRIPTORS set but no __thread_vars section found in %s\n", this->getPath());
+        return;
+    }
+
+    if (!hasFlag)
+        dyld::log("dyld: TLV: MH_HAS_TLV_DESCRIPTORS not set but __thread_vars found in %s — patching anyway\n", this->getPath());
+
     size_t totalSize = tdSize + tbSize;
-    if (totalSize == 0) return;
+    // Use a minimum allocation size so calloc never returns NULL for zero-size
+    size_t allocSize = (totalSize > 0) ? totalSize : sizeof(void*);
+
+    dyld::log("dyld: TLV: %s: __thread_vars=%zu bytes, __thread_data=%zu bytes, __thread_bss=%zu bytes, allocSize=%zu\n",
+              this->getPath(), tvSize, tdSize, tbSize, allocSize);
 
     // Allocate pthread key for this image
     pthread_key_t tlvKey;
@@ -2574,7 +2588,7 @@ void ImageLoaderMachO::initializeTLVs(const LinkContext& context)
 
     // Register in global list
     auto* node = (TLVImageInfoNode*)malloc(sizeof(TLVImageInfoNode));
-    node->info = { tlvKey, initCopy, tdSize, totalSize };
+    node->info = { tlvKey, initCopy, tdSize, allocSize };
     node->next = sTLVImageInfoList;
     sTLVImageInfoList = node;
 
@@ -2582,7 +2596,7 @@ void ImageLoaderMachO::initializeTLVs(const LinkContext& context)
     size_t count = tvSize / sizeof(struct tlv_descriptor);
     auto* descs = (struct tlv_descriptor*)tvAddr;
     dyld::log("dyld: patching %zu TLV descriptors in %s (key=%lu, storage=%zu bytes)\n",
-              count, this->getPath(), (unsigned long)tlvKey, totalSize);
+              count, this->getPath(), (unsigned long)tlvKey, allocSize);
     for (size_t j = 0; j < count; ++j) {
         descs[j].thunk = custom_tlv_get_addr;
         descs[j].key   = tlvKey;

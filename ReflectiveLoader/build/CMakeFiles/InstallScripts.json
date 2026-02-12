@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/Users/altered/dev/red-team/edr-evasion/macos/ReflectiveLoader/ReflectiveLoader/build/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
