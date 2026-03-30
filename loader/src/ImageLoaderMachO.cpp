@@ -676,7 +676,6 @@ ImageLoader* ImageLoaderMachO::instantiateFromCache(const macho_header* mh, cons
 // create image by copying an in-memory mach-o file
 ImageLoader* ImageLoaderMachO::instantiateFromMemory(const char* moduleName, const macho_header* mh, uint64_t len, const LinkContext& context)
 {
-    printf("Module name is %s", moduleName);
 	bool compressed;
 	unsigned int segCount;
 	unsigned int libCount;
@@ -909,7 +908,6 @@ void ImageLoaderMachO::parseLoadCmds(const LinkContext& context)
 		this->setDyldInfo(dyldInfo);
 	if ( chainedFixupsCmd != NULL )
     {
-        printf("setChainedFixups\n");
         this->setChainedFixups(chainedFixupsCmd);
     }
 	if ( exportsTrieCmd != NULL )
@@ -1243,22 +1241,15 @@ void ImageLoaderMachO::loadCodeSignature(const struct linkedit_data_command* cod
 void ImageLoaderMachO::validateFirstPages(const struct linkedit_data_command* codeSigCmd, int fd, const uint8_t *fileData, size_t lenFileData, off_t offsetInFat, const LinkContext& context)
 {
     
-    printf("ImageLoaderMachO::validateFirstPages\n\n");
-    
-    
 #if TARGET_OS_OSX
 	// rdar://problem/21839703> 15A226d: dyld crashes in mageLoaderMachO::validateFirstPages during dlopen() after encountering an mmap failure
 	// We need to ignore older code signatures because they will be bad.
 	if ( this->sdkVersion() < DYLD_PACKED_VERSION(10,9,0) ) {
-        printf("ImageLoaderMachO::validateFirstPages: 0\n\n");
-        
 		return;
 	}
 #endif
 #if !UNSIGN_TOLERANT
 	if (codeSigCmd != NULL) {
-        printf("ImageLoaderMachO::validateFirstPages: 1\n\n");
-        
 		void *fdata = xmmap(NULL, lenFileData, PROT_READ, MAP_SHARED, fd, offsetInFat);
 		if ( fdata == MAP_FAILED ) {
 			int errnoCopy = errno;
@@ -1277,7 +1268,6 @@ void ImageLoaderMachO::validateFirstPages(const struct linkedit_data_command* co
 	}
     else
     {
-        printf("ImageLoaderMachO::validateFirstPages: 2\n\n");
     }
 #endif
 }
@@ -2571,9 +2561,6 @@ void ImageLoaderMachO::initializeTLVs(const LinkContext& context)
     // Use a minimum allocation size so calloc never returns NULL for zero-size
     size_t allocSize = (totalSize > 0) ? totalSize : sizeof(void*);
 
-    dyld::log("dyld: TLV: %s: __thread_vars=%zu bytes, __thread_data=%zu bytes, __thread_bss=%zu bytes, allocSize=%zu\n",
-              this->getPath(), tvSize, tdSize, tbSize, allocSize);
-
     // Allocate pthread key for this image
     pthread_key_t tlvKey;
     if (pthread_key_create(&tlvKey, tlv_thread_storage_destructor) != 0)
@@ -2595,8 +2582,6 @@ void ImageLoaderMachO::initializeTLVs(const LinkContext& context)
     // Patch each TLV descriptor
     size_t count = tvSize / sizeof(struct tlv_descriptor);
     auto* descs = (struct tlv_descriptor*)tvAddr;
-    dyld::log("dyld: patching %zu TLV descriptors in %s (key=%lu, storage=%zu bytes)\n",
-              count, this->getPath(), (unsigned long)tlvKey, allocSize);
     for (size_t j = 0; j < count; ++j) {
         descs[j].thunk = custom_tlv_get_addr;
         descs[j].key   = tlvKey;

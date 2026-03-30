@@ -67,17 +67,9 @@ namespace dyld {
     }
 
     void log(const char* format, ...) {
-        va_list	list;
-        va_start(list, format);
-        vprintf(format, list);
-        va_end(list);
     }
 
     void warn(const char* format, ...) {
-        va_list	list;
-        va_start(list, format);
-        printf(format, list);
-        va_end(list);
     }
 
     const char* mkstringf(const char* format, ...) {

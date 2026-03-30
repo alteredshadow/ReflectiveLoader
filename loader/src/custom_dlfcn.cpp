@@ -144,12 +144,8 @@ extern "C" void* custom_dlopen(const char * __path, int __mode) {
       
     return image;
   } catch (const char * msg) {
-      printf("custom_dlopen: error %s\n", msg);
-      
     return with_error("Error happens during dlopen execution. " + std::string(msg));
   } catch (...) {
-      printf("custom_dlopen: error ??\n");
-      
     return with_error("Error happens during dlopen execution. Unknown reason...");
   }
 }
@@ -160,8 +156,6 @@ extern "C" void* custom_dlopen_from_memory(void* mh, int len) {
     
     // Load image step
     auto image = ImageLoaderMachO::instantiateFromMemory(path, (macho_header*)mh, len, g_linkContext);
-      
-    printf("dyld: 'ImageLoaderMachO::instantiateFromMemory' completed (image addr: %p)\n", image);
 
     bool forceLazysBound = true;
     bool preflightOnly = false;
@@ -173,14 +167,10 @@ extern "C" void* custom_dlopen_from_memory(void* mh, int len) {
     ImageLoader::RPathChain loaderRPaths(NULL, &rpaths);
     image->link(g_linkContext, forceLazysBound, preflightOnly, neverUnload, loaderRPaths, path);
     
-    printf("dyld: 'image->link' completed\n");
-    
     // Initialization of static objects step
     ImageLoader::InitializerTimingList initializerTimes[1];
     initializerTimes[0].count = 0;
     image->runInitializers(g_linkContext, initializerTimes[0]);
-    
-    printf("dyld: 'image->runInitializers' completed\n");
 
     return image;
   

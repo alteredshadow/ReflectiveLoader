@@ -610,12 +610,7 @@ void ImageLoader::processInitializers(const LinkContext& context, mach_port_t th
 	ups.count = 0;
 	// Calling recursive init on all images in images list, building a new list of
 	// uninitialized upward dependencies.
-    printf("Image count is %u\n", maxImageCount);
-    printf("Images.count is %lu\n", images.count);
 	for (uintptr_t i=0; i < images.count; ++i) {
-        printf("Initalizing image #%lu\n",i);
-        ImageLoader* image = images.imagesAndPaths[i].first;
-        printf("  Image address: %p\n", (void*)image);
 		
         try{
             images.imagesAndPaths[i].first->recursiveInitialization(context, thisThread, images.imagesAndPaths[i].second, timingInfo, ups);
